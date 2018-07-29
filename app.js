@@ -1,13 +1,13 @@
 if (process.env.NODE_ENV !== 'production') require('dotenv').config();
 
-var express = require("express");
+var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
 
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const mongodb = require("mongodb");
+const mongodb = require('mongodb');
 const mongoUri = process.env.MONGODB_URI;
 
 /**
