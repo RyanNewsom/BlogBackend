@@ -10,20 +10,59 @@ app.use(bodyParser.urlencoded({ extended: true }));
 const mongodb = require("mongodb");
 const mongoUri = process.env.MONGODB_URI;
 
-mongodb.connect(mongoUri, function(err, result) {
-    if(err) throw err;
-})
-
+/**
+ * Returns all blog posts
+ */
 app.get("/post", function(req, res) {
-    //return all posts
-    res.send("/posts works!");
+    console.log("Attempting to return all posts");
+
+    mongodb.connect(mongoUri, function(err, client) {
+        if(err) throw err;
+
+        let db = client.db('heroku_6w2wk5lq');
+        let posts = db.collection('posts');
+
+        posts.find({}).toArray(function(err, posts) {
+            if(err) throw err;
+
+            console.log("Found the following posts");
+            console.log(posts)
+            
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify(posts));
+        });
+    });
 });
 
+/**
+ * Returns a post by id
+ */
 app.get("/post/:id", function(req, res) {
-    //get post by id
-    res.send("posts for id works!");
+    let id = req.params.id;
+    console.log(`Attempting to find post with id: ${id}`);
+
+    mongodb.connect(mongoUri, function(err, client) {
+        if(err) throw err;
+
+        let db = client.db('heroku_6w2wk5lq');
+        let posts = db.collection('posts');
+
+        posts.findOne({id}, function(err, result) {
+            if(err) {
+                console.log(`Unable to find post with id: ${id}`);
+                throw err;
+            }
+
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify(result));
+        });
+        
+    });
 });
 
+/**
+ * Adds a blog post to the Mongo DB
+ */
 app.post("/post", function(req, res) {
     var name = req.body.name;
     var content = req.body.content;
@@ -54,7 +93,8 @@ app.post("/post", function(req, res) {
             posts.insert(post, function(err, result) {
                 if(err) throw err;
 
-                res.send("Successfully created post!");
+                res.setHeader('Content-Type', 'application/json');
+                res.send(JSON.stringify(result.ops[0]));
             });
         });
     } else {
@@ -64,19 +104,24 @@ app.post("/post", function(req, res) {
     }
 });
 
+/**
+ * Default error handler
+ */
 app.use(function (err, req, res, next) {
     console.error(err.stack)
     res.status(500).send('Internal Server Error')
 })
 
-// catch all
+/**
+ * Catch all for bad requests
+ */
 app.get("*", function(req, res) {
     res.send(404, "Sorry, this page does not exist.");
 });
 
-//init
+/**
+ * Init
+ */
 app.listen(3000, () => {
     console.log("Server started");
 });
-
-
